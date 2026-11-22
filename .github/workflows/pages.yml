@@ -1,0 +1,52 @@
+name: Publish science lab
+on:
+  push:
+    branches: [main]
+    paths: ['.bootstrap/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack verified application source
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, io, pathlib, zipfile
+          data = b''.join(p.read_bytes() for p in sorted(pathlib.Path('.bootstrap').glob('part-*')))
+          assert hashlib.sha256(data).hexdigest() == '71a420cc7e19021f6e34d6b0de17e585ff76e8e34a0c1c4924a453b16b671bd5'
+          with zipfile.ZipFile(io.BytesIO(data)) as z:
+              assert z.testzip() is None
+              for n in z.namelist():
+                  p = pathlib.PurePosixPath(n)
+                  assert not p.is_absolute() and '..' not in p.parts
+              z.extractall('site-source')
+          PY
+      - name: Check application files
+        run: |
+          test -f site-source/dist/index.html
+          node --check site-source/dist/body.js
+          node --check site-source/dist/body-data.js
+          node --check site-source/dist/sw.js
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site-source/dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
