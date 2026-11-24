@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101c2a">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23101c2a'/><text x='16' y='23' text-anchor='middle' font-size='20' fill='%23e9d8b5'>◈</text></svg>">
+  <title>움직임 탐구실 — 우리 몸의 구조와 기능</title>
+  <link rel="stylesheet" href="anatomy.css">
+  <link rel="stylesheet" href="body.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+</head>
+<body class="student-mode activity-observe">
+  <header>
+    <button id="homeBtn" class="home-btn" type="button" aria-label="활동 고르기">← 활동 고르기</button>
+    <a href="./" class="brand"><span>◈</span> 움직임 탐구실</a>
+    <span class="course">6학년 과학 · 우리 몸의 구조와 기능 (교과서 24~25쪽)</span>
+    <div class="header-tools">
+      <button id="fontToggle" type="button" aria-pressed="false" title="글자 크기 크게/보통">가+ 크게</button>
+      <button id="speakBtn" type="button" aria-pressed="false" title="설명을 소리로 읽어 주기">🔊 읽어주기</button>
+      <button id="fullscreen" type="button">교실 화면</button>
+    </div>
+  </header>
+
+  <!-- 단일 입구: 활동 카드 3개 -->
+  <section id="homeHub" class="home-hub" aria-label="수업 활동 고르기">
+    <div class="home-inner">
+      <div class="home-head">
+        <span class="overline">6학년 과학 · 우리 몸의 구조와 기능 [6과04-01]</span>
+        <h1>오늘 어떤 탐구를 해 볼까요?</h1>
+        <p>아래 활동 중 하나를 누르면 바로 관찰을 시작할 수 있어요.</p>
+      </div>
+      <div class="activity-cards">
+        <a href="digestion.html" class="activity-card" style="text-decoration:none;display:flex;flex-direction:column;color:inherit;border-color:#80d8b5">
+          <span class="card-badge" style="background:#264f48;color:#aff3d6">소화기관 차시</span>
+          <strong class="card-title">한 입의 음식, 몸속 여행</strong>
+          <p class="card-desc">입부터 항문까지 음식물의 변화를 따라가며 소화·흡수·배출을 비교해요. 실제 3D 소화기관도 돌려 볼 수 있어요.</p>
+          <span class="card-cta">소화 여행 시작하기</span>
+        </a>
+        <button id="cardObserve" class="activity-card" type="button" data-activity="observe">
+          <span class="card-badge">1차시</span>
+          <strong class="card-title">뼈와 근육 관찰</strong>
+          <p class="card-desc">교과서에 나오는 뼈 5개와 근육 5개를 돌려 보고, 뼈가 뇌·심장·폐를 감싸 보호하는 모습을 살펴봐요.</p>
+          <span class="card-cta">관찰 시작하기 →</span>
+        </button>
+        <button id="cardMotion" class="activity-card" type="button" data-activity="motion">
+          <span class="card-badge badge-motion">2차시</span>
+          <strong class="card-title">팔·다리 움직이면 근육은?</strong>
+          <p class="card-desc">팔과 다리를 굽혔다 펴며 근육 길이가 어떻게 줄어들고 늘어나는지, 볼록·평평 변화를 재어 봐요.</p>
+          <span class="card-cta">움직임 실험하기 →</span>
+        </button>
+        <button id="cardCamera" class="activity-card" type="button" data-activity="camera">
+          <span class="card-badge badge-cam">카메라</span>
+          <strong class="card-title">내 모습에 겹쳐 보기</strong>
+          <p class="card-desc">둘이서 함께! 내 몸에 뼈와 근육을 겹쳐 보고, 동작을 멈춰 그림으로 저장하거나 옆에서 돌려 봐요.</p>
+          <span class="card-cta">카메라 안내 보기 →</span>
+        </button>
+      </div>
+      <div class="home-sublinks">
+        <span>2차시 보조 탐구:</span>
+        <a href="arm.html">팔 확대 3D 탐구</a>
+        <a href="schematic.html">팔·다리 2D 원리 모형</a>
+        <span id="offlineStatus" class="offline-pill">오프라인 저장 준비 중…</span>
+      </div>
+      <p class="home-credit">뼈·근육·소화기관 탐구 · 3D 해부학 데이터: BodyParts3D (CC BY 4.0) · 영상은 기기 밖으로 보내지 않아요.</p>
+    </div>
+  </section>
+
+  <!-- 카메라 사용 안내 한 장 -->
+  <section id="cameraGuide" class="camera-guide" role="dialog" aria-modal="true" aria-labelledby="cameraGuideTitle" hidden>
+    <div class="guide-card">
+      <span class="overline">카메라 사용 안내</span>
+      <h2 id="cameraGuideTitle">둘이서 하자!</h2>
+      <p class="guide-lead">한 명은 태블릿을 들고, 한 명은 움직여 봐.</p>
+      <div class="guide-steps">
+        <div><strong>1. 역할 나누기</strong><span>한 친구는 정면에서 태블릿을 들고, 다른 친구는 팔이나 몸이 다 보이게 서요.</span></div>
+        <div><strong>2. 천천히 움직이기</strong><span>팔을 굽히고 펴며 <b>줄어듦 · 볼록</b> 변화를 보고, <b>옆에서 보기</b>와 <b>멈추기</b>를 눌러 봐요.</span></div>
+      </div>
+      <div class="guide-modes" role="radiogroup" aria-label="카메라 관찰 모드">
+        <button id="camPresetArm" class="preset-btn" type="button" data-campreset="arm">
+          <b>팔 모드</b><span>팔 안쪽·바깥쪽 근육 집중</span>
+        </button>
+        <button id="camPresetUpper" class="preset-btn active" type="button" data-campreset="upper">
+          <b>상반신 모드 (기본)</b><span>머리·몸통·양팔 함께 보기</span>
+        </button>
+        <button id="camPresetFull" class="preset-btn" type="button" data-campreset="full">
+          <b>전신 모드 (교실 웹캠용)</b><span>온몸 동작 맞히기 활동</span>
+        </button>
+      </div>
+      <p class="guide-privacy">🔒 카메라 영상은 내 기기 안에서만 쓰이며, 그림으로 저장할 때도 사람 얼굴과 영상은 빠지고 뼈·근육 모형만 저장돼요.</p>
+      <div class="guide-actions">
+        <button id="startCameraNow" class="primary-btn" type="button">📷 카메라 시작하기</button>
+        <button id="closeCameraGuide" type="button">돌아가기</button>
+      </div>
+    </div>
+  </section>
+
+  <main id="workspace">
+    <div class="heading">
+      <div>
+        <div class="overline" id="activityOverline">1차시 · 뼈와 근육 관찰</div>
+        <h1 id="activityTitle">우리 몸의 뼈와 근육을 살펴볼까요?</h1>
+      </div>
+      <div class="activity-tabs" role="tablist" aria-label="수업 활동 전환">
+        <button id="tabObserve" class="active" type="button" role="tab" aria-selected="true">1차시 · 뼈와 근육</button>
+        <button id="tabMotion" type="button" role="tab" aria-selected="false">2차시 · 움직임·길이</button>
+        <button id="tabCamera" type="button" role="tab" aria-selected="false">📷 카메라</button>
+      </div>
+      <div class="mode">
+        <button id="modelMode" class="active" type="button">3D 모형</button>
+        <button id="cameraMode" type="button" disabled>📷 카메라 켜기</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <section class="viewport" id="viewport">
+        <div class="viewbar">
+          <span id="viewTitle">상반신 · 3D 해부학 모형</span>
+          <span class="chip" id="quality">교과서 10개 부위</span>
+        </div>
+        <div id="stage">
+          <video id="video" autoplay muted playsinline hidden></video>
+          <div id="labels"><svg id="leaders" aria-hidden="true"></svg></div>
+          <div id="loading" role="status">
+            <div id="loadingText">3D 모형을 준비하고 있어요…</div>
+            <div class="load-track"><div id="loadBar" class="load-bar"></div></div>
+          </div>
+          <div id="organBanner" class="organ-banner" hidden>🛡️ 뼈가 뇌를 감싸 보호해요 · 갈비뼈가 심장과 폐를 보호해요</div>
+          <div id="freezeBadge" class="freeze-badge" hidden>⏸ 동작 멈춤 · 얼굴 없이 모형만 표시 중</div>
+          <div class="viewtools">
+            <button data-view="front" class="active" type="button">앞면</button>
+            <button data-view="side" type="button">옆면</button>
+            <button data-view="back" type="button">뒷면</button>
+            <button id="reset" type="button">모두 되돌리기</button>
+          </div>
+          <div class="stagelayers" role="group" aria-label="보이는 층">
+            <button data-layer="bone" type="button">뼈</button>
+            <button data-layer="muscle" type="button">근육</button>
+            <button data-layer="both" class="active" type="button">함께</button>
+            <button id="organGuardBtn" class="guard-btn" type="button" aria-pressed="false" title="머리뼈 속 뇌, 갈비뼈 속 심장과 폐를 반투명으로 관찰해요">🛡️ 뼈가 지킴이</button>
+          </div>
+          <div class="zoomtools" role="group" aria-label="확대와 축소">
+            <button id="zoomIn" type="button" aria-label="확대">＋</button>
+            <button id="zoomOut" type="button" aria-label="축소">－</button>
+          </div>
+          <div id="cameraActions" class="camera-actions" hidden>
+            <button id="freezeBtn" type="button">⏸ 멈추기</button>
+            <button id="sideViewCamBtn" type="button">↻ 옆에서 보기</button>
+            <button id="savePngBtn" type="button">💾 그림으로 저장</button>
+          </div>
+          <div class="gesture" id="gesture">손가락으로 돌려 보고, 확대·축소 버튼으로 크게 보세요</div>
+        </div>
+        <div class="statusbar">
+          <span id="status" role="status">3D 모델을 준비하고 있어요.</span>
+          <button id="quickResetBtn" type="button">모두 되돌리기</button>
+          <button id="flip" type="button" hidden>전·후면 전환</button>
+          <button id="stopCamera" type="button" hidden>카메라 끄기</button>
+        </div>
+        <div class="timeline" id="motionPanel">
+          <div class="motionheading">
+            <div>
+              <span class="overline" id="jointTitle">양팔 굽힘</span>
+              <strong><span id="angle">0</span><small>°</small></strong>
+            </div>
+            <div class="motion-select">
+              <button data-motion="arms" class="active" type="button">팔 굽히기</button>
+              <button data-motion="legs" type="button">다리 굽히기</button>
+            </div>
+            <button id="play" type="button" disabled>▶ 자동 움직임</button>
+          </div>
+          <label for="bend" class="sr-only">관절 굽힘 각도</label>
+          <input id="bend" type="range" min="0" max="125" value="0" disabled>
+          <div class="rangeends"><span>0° · 편 때</span><span>125° · 굽혔을 때</span></div>
+        </div>
+      </section>
+
+      <aside id="studentDock">
+        <!-- 1차시 기본: 교과서 10개 부위 -->
+        <section class="panel structures" id="structuresPanel">
+          <div class="panel-head-row">
+            <div>
+              <div class="overline">교과서 24~25쪽 · 핵심 10개 부위</div>
+              <h2>뼈 5개 · 근육 5개를 눌러 보세요</h2>
+            </div>
+          </div>
+          <div id="parts" class="textbook-grid"></div>
+          <div id="partInfo">
+            <strong>갈비뼈</strong>
+            <p>가슴의 모양을 만들고, 속에 있는 심장과 폐 같은 기관을 보호해요.</p>
+          </div>
+          <div id="boneFunctionsCard" class="bone-functions">
+            <span class="bf-title">뼈의 세 가지 역할</span>
+            <div class="bf-chips">
+              <span>① 모양을 만들어요</span>
+              <span>② 몸을 지탱해요</span>
+              <span>③ 기관을 보호해요</span>
+            </div>
+          </div>
+          <div class="scope-credit">
+            <span>교과서 24~25쪽 범위</span>
+            <a href="#sourceDetails" id="sourceLink">출처 밝히기</a>
+          </div>
+        </section>
+
+        <!-- 2차시 기본: 움직임의 원리와 근육 길이 재기 -->
+        <section class="discovery" id="motionDiscovery">
+          <span class="overline">2차시 · 근육 길이 재기</span>
+          <h2>굽히고 펼 때 근육 길이를 비교해요</h2>
+          <div id="lengthMeasureBox" class="measure-box">
+            <div class="measure-item">
+              <div class="pair">
+                <span id="frontMuscle"><i class="red"></i>팔 안쪽 근육 <small>(이두근)</small></span>
+                <strong id="bicepsState">늘어남 · 평평</strong>
+              </div>
+              <div class="length-compare">
+                <span>편 때 <b id="frontBaseLen">100</b></span>
+                <span class="arrow">→</span>
+                <span class="now-val">지금(굽혔을 때) <b id="frontNowLen">100</b></span>
+              </div>
+              <div class="meter"><div id="bicepsMeter"></div></div>
+            </div>
+            <div class="measure-item">
+              <div class="pair">
+                <span id="backMuscle"><i class="blue"></i>팔 바깥쪽 근육 <small>(삼두근)</small></span>
+                <strong id="tricepsState">줄어듦 · 볼록</strong>
+              </div>
+              <div class="length-compare">
+                <span>편 때 <b id="backBaseLen">100</b></span>
+                <span class="arrow">→</span>
+                <span class="now-val">지금(굽혔을 때) <b id="backNowLen">100</b></span>
+              </div>
+              <div class="meter blue"><div id="tricepsMeter"></div></div>
+            </div>
+          </div>
+          <p id="motionLesson">팔을 굽히면 팔 안쪽 근육의 길이가 줄어들고 볼록해지며, 팔 바깥쪽 근육은 길이가 늘어나고 평평해져요. 뼈의 길이는 그대로예요.</p>
+          <p class="glow-note"><i></i><span>노랗게 빛나는 효과는 움직이는 동안에만 나타나고, 이름표의 <b>줄어듦 · 볼록</b>은 굽힌 상태를 유지할 때도 계속 보여요.</span></p>
+          <small class="measure-note">※ 숫자는 실제 cm가 아니라 편 때(100)와 비교한 상대 길이예요.</small>
+          <div class="sub-activity-links">
+            <a href="arm.html">팔 확대 3D 탐구 →</a>
+            <a href="schematic.html">팔·다리 2D 원리 모형 →</a>
+          </div>
+        </section>
+
+        <!-- 더 알아보기: 38개 세부 부위 & 학술 이름 -->
+        <details id="morePartsDetails" class="panel fold-panel">
+          <summary>🔍 더 알아보기 (세부 38개 부위 · 학술 이름)</summary>
+          <div class="fold-body">
+            <input id="partSearch" type="search" placeholder="세부 뼈·근육 이름 찾기 (예: 이두근, 척추)" aria-label="부위 이름 검색">
+            <div id="moreParts" class="more-parts"></div>
+          </div>
+        </details>
+
+        <!-- 고급 설정 (교사용) -->
+        <details id="teacherPanel" class="panel fold-panel">
+          <summary>⚙️ 고급 설정 (교사용)</summary>
+          <div class="fold-body">
+            <div class="teacher-group">
+              <label>관찰 범위 바꾸기</label>
+              <nav class="regions" aria-label="관찰 범위">
+                <button data-region="head" type="button"><b>얼굴·목</b><span>표정근 확대</span></button>
+                <button data-region="upper" class="active" type="button"><b>상반신</b><span>머리·몸통·양팔</span></button>
+                <button data-region="lower" type="button"><b>하반신</b><span>골반·양다리</span></button>
+                <button data-region="full" type="button"><b>전신</b><span>온몸 연결</span></button>
+              </nav>
+            </div>
+            <div class="teacher-group">
+              <label>보이는 층</label>
+              <div class="segments">
+                <button data-layer="bone" type="button">뼈</button>
+                <button data-layer="muscle" type="button">근육</button>
+                <button data-layer="both" class="active" type="button">함께</button>
+              </div>
+              <label class="row">근육 투명도 <output id="opacityValue">85%</output></label>
+              <input id="opacity" aria-label="근육 불투명도" type="range" min="15" max="100" value="85">
+              <label class="check"><input id="names" type="checkbox" checked> 주요 부위 이름표</label>
+              <p class="hint" id="regionHint">머리뼈·갈비뼈·척추뼈·팔뼈와 근육을 함께 관찰해요.</p>
+            </div>
+            <div class="teacher-group render-panel">
+              <label for="detailLevel">근육 범위</label>
+              <select id="detailLevel">
+                <option value="major">수업용 주요 근육 · 가볍게 (38개)</option>
+                <option value="all">상세 근육 · 깊은 근육 포함 (187개)</option>
+              </select>
+              <div id="zones" class="zone-grid"></div>
+              <label class="check"><input id="isolate" type="checkbox"> 선택한 부위만 보기</label>
+              <label for="renderQuality">화면 품질</label>
+              <select id="renderQuality">
+                <option value="light">가볍게 · 태블릿 권장</option>
+                <option value="sharp">선명하게 · 교사용 PC</option>
+              </select>
+              <p class="hint" id="renderCount" role="status"></p>
+            </div>
+          </div>
+        </details>
+      </aside>
+    </div>
+
+    <section class="panel" id="faceLesson" hidden>
+      <h2>웃을 때, 눈을 감을 때</h2>
+      <p>얼굴·목 화면의 카메라 모드에서 얼굴 위치를 따로 추적해요. 눈 깜빡임·미소·입 오므림에 관련된 얼굴 근육을 노란색으로 표시해요. 표정 분류를 이용한 학습용 강조이며 실제 수축이나 힘을 측정하지 않아요.</p>
+    </section>
+
+    <details id="sourceDetails">
+      <summary>📚 교과서 24~25쪽 범위 · 카메라 사용법 · 출처 밝히기</summary>
+      <p><strong>교과서 24~25쪽 범위 (성취기준 [6과04-01]):</strong> 첫 화면에는 교과서에 나오는 뼈 5개(머리뼈·팔뼈·갈비뼈·척추뼈·다리뼈)와 근육 5개(얼굴·가슴·팔·배·다리 근육)를 보여 주고, 38개 세부 부위와 학술 이름은 ‘더 알아보기’에 담았어요. ‘뼈가 지킴이’로 머리뼈 속 뇌와 갈비뼈 속 심장·폐가 보호되는 모습을 관찰할 수 있어요.</p>
+      <p><strong>카메라 안내 및 개인정보 보호:</strong> 카메라 모드는 HTTPS 주소에서 동작해요. 영상은 기기 안에서만 처리하며 서버로 보내지 않아요. ‘멈추기’와 ‘그림으로 저장’에서는 사람 얼굴과 카메라 영상을 빼고 뼈·근육 모형만 PNG 그림으로 내려받아요.</p>
+      <p><strong>데이터 출처 밝히기:</strong> 3D 뼈·근육·기관(뇌·심장·폐) 모형은 BodyParts3D, © The Database Center for Life Science (CC Attribution 4.0 International) 데이터를 교육용으로 경량화하여 사용했어요. <a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html" target="_blank" rel="noopener">공식 데이터 출처</a> · <a href="models/body/ATTRIBUTION.txt">모델별 출처와 변형 내역</a> · <a href="models/body/organs-manifest.json">기관 모델 정보</a> · <a href="models/atlas/ATTRIBUTION.txt">추가 근육 출처</a>.</p>
+    </details>
+  </main>
+
+  <script type="module" src="body.js"></script>
+</body>
+</html>

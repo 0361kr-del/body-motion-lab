@@ -1,0 +1,9 @@
+Digestive system anatomy models
+BodyParts3D, © The Database Center for Life Science (DBCLS).
+Creative Commons Attribution 4.0 International.
+Official source and license: https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html
+Source STL mirror: https://github.com/Kevin-Mattheus-Moerman/BodyParts3D
+assets/BodyParts3D_data/stl/<id>.stl
+Exact structure identifiers: source-groups.json. Counts and bounds: geometry-manifest.json.
+Changes: combined duodenum/jejunum/ileum; combined colon/rectum; mm Z-up to meters Y-up; welded, simplified (target 3000 vertices per group), Draco compressed. Original organ positions retained. No mirrored copies of digestive organs.
+This is a simplified external surface model, not a clinical or internal-lumen model. The 2D SVG and process particles are original educational schematic illustrations.

@@ -1,0 +1,12 @@
+export const STAGES=[
+ {id:'mouth',name:'입',verb:'잘게 씹고 침과 섞어요',kind:'소화 시작',role:'이가 음식물을 잘게 부수고 침이 촉촉하게 해요. 침 속 소화 효소는 녹말의 소화를 시작해요.',change:'큰 음식 조각 → 잘게 씹힌 음식 덩어리',question:'씹기만 하는 것과 침이 섞이는 것은 어떻게 다를까요?',note:'잘게 부수는 변화와 영양소가 분해되는 변화는 달라요.',color:'#ffc66e',path:'M250 115 L250 145'},
+ {id:'esophagus',name:'식도',verb:'근육이 차례로 밀어 보내요',kind:'이동',role:'관 모양의 근육이 차례로 오므라들어 음식물을 위로 보내요. 이 움직임을 연동 운동이라고 해요.',change:'음식 덩어리가 위를 향해 이동',question:'음식물은 중력 때문에만 내려갈까요?',note:'식도에서는 새로운 소화액을 더하지 않아요.',color:'#f5a790',path:'M250 145 C245 185 249 240 258 285'},
+ {id:'stomach',name:'위',verb:'주무르고 소화액과 섞어요',kind:'소화',role:'근육이 음식물을 주무르고 위액과 섞어요. 단백질의 소화가 시작되고, 걸쭉해진 내용물이 조금씩 작은창자로 가요.',change:'음식 덩어리 → 걸쭉한 내용물',question:'소화가 위에서 모두 끝날까요?',note:'위는 음식물을 잠시 저장하는 역할도 해요.',color:'#ff829a',path:'M258 285 C290 280 320 300 310 325 C305 352 285 365 270 350 C260 335 248 337 243 353'},
+ {id:'small',name:'작은창자',verb:'소화를 이어 가고 영양소를 흡수해요',kind:'소화 + 흡수',role:'여러 소화액이 섞여 소화가 계속돼요. 작게 분해된 영양소 대부분은 창자 벽을 지나 몸속으로 흡수돼요.',change:'분해된 영양소가 창자 벽을 통과 → 온몸으로',question:'흡수된 영양소는 음식물과 같은 길로 항문까지 갈까요?',note:'많은 영양소는 혈액으로, 지방 성분 일부는 림프를 거쳐 이동해요. 물도 여기에서 많이 흡수돼요.',color:'#ffb17d',path:'M243 353 C212 350 204 367 238 377 C290 390 303 365 301 389 C300 415 215 389 220 417 C226 442 300 418 296 444 C290 465 222 438 213 462 L190 455'},
+ {id:'large',name:'큰창자',verb:'남은 물을 더 흡수해요',kind:'흡수 · 대변 형성',role:'남은 내용물에서 물 등을 더 흡수해요. 소화되지 않은 찌꺼기 등이 대변이 되고 직장에 잠시 모여요.',change:'수분이 많은 찌꺼기 → 대변',question:'물은 큰창자에서만 흡수될까요?',note:'아니에요. 작은창자에서도 물을 흡수해요. 직장은 큰창자의 마지막 부분이에요.',color:'#d8a3e8',path:'M190 455 C168 450 165 420 169 385 L169 340 Q169 325 185 325 C208 320 223 330 240 320 L321 325 Q340 325 339 350 L339 439 C340 474 282 465 272 490 L258 515'},
+ {id:'anus',name:'항문',verb:'대변을 몸 밖으로 내보내요',kind:'배출',role:'직장에 모인 대변이 항문을 통해 몸 밖으로 나가요. 소화되지 않은 찌꺼기 등을 배출하는 과정이에요.',change:'직장의 대변 → 몸 밖으로',question:'영양소 흡수와 대변 배출은 어떻게 다를까요?',note:'먹은 음식이 모두 대변이 되는 것은 아니에요.',color:'#c5b49b',path:'M258 515 L258 553'}
+];
+export const HELPERS={liver:{name:'간',text:'쓸개즙을 만들어요. 쓸개즙은 지방을 작은 방울로 흩어지게 해 소화를 도와요.'},gallbladder:{name:'쓸개',text:'간에서 만든 쓸개즙을 저장했다가 작은창자로 보내요.'},pancreas:{name:'이자',text:'여러 영양소를 분해하는 효소가 든 소화액을 작은창자로 보내요.'}};
+export const TOTAL=48;
+export function frameAt(t){const value=Math.max(0,Math.min(TOTAL,t));return {time:value,index:Math.min(5,Math.floor(value/8)),fraction:value===TOTAL?1:(value%8)/8}}
+export function advance(t,delta,pauseAtStep){const limit=pauseAtStep?Math.min(TOTAL,(Math.floor(t/8)+1)*8):TOTAL;const next=Math.min(limit,t+delta);return {time:next,stop:next>=limit}}

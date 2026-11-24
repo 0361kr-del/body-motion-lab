@@ -1,0 +1,56 @@
+{
+  "esophagus": [
+    {
+      "id": "FMA7131",
+      "name": "esophagus"
+    }
+  ],
+  "stomach": [
+    {
+      "id": "FMA7148",
+      "name": "stomach"
+    }
+  ],
+  "small": [
+    {
+      "id": "FMA7206",
+      "name": "duodenum"
+    },
+    {
+      "id": "FMA7207",
+      "name": "jejunum"
+    },
+    {
+      "id": "FMA7208",
+      "name": "ileum"
+    }
+  ],
+  "large": [
+    {
+      "id": "FMA14543nsn",
+      "name": "colon, nsn"
+    },
+    {
+      "id": "FMA14544",
+      "name": "rectum"
+    }
+  ],
+  "liver": [
+    {
+      "id": "FMA7197",
+      "name": "liver"
+    }
+  ],
+  "pancreas": [
+    {
+      "id": "FMA7198nsn",
+      "name": "pancreas, nsn"
+    }
+  ],
+  "gallbladder": [
+    {
+      "id": "FMA7202",
+      "name": "gallbladder"
+    }
+  ]
+}

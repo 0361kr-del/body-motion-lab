@@ -2,7 +2,7 @@ name: Publish science lab
 on:
   push:
     branches: [main]
-    paths: ['.bootstrap/**', '.github/workflows/pages.yml']
+    paths: ['.bootstrap/**', 'web/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -28,12 +28,16 @@ jobs:
                   assert not p.is_absolute() and '..' not in p.parts
               z.extractall('site-source')
           PY
+      - name: Apply classroom additions
+        run: cp -R web/. site-source/dist/
       - name: Check application files
         run: |
           test -f site-source/dist/index.html
           node --check site-source/dist/body.js
           node --check site-source/dist/body-data.js
           node --check site-source/dist/sw.js
+          node --check site-source/dist/digestion.js
+          node --check site-source/dist/digestion-3d.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site-source/dist
