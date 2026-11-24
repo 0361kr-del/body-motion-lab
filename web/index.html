@@ -22,7 +22,7 @@
     </div>
   </header>
 
-  <!-- 단일 입구: 활동 카드 3개 -->
+  <!-- 단일 입구: 활동 카드 4개 -->
   <section id="homeHub" class="home-hub" aria-label="수업 활동 고르기">
     <div class="home-inner">
       <div class="home-head">
@@ -31,12 +31,6 @@
         <p>아래 활동 중 하나를 누르면 바로 관찰을 시작할 수 있어요.</p>
       </div>
       <div class="activity-cards">
-        <a href="digestion.html" class="activity-card" style="text-decoration:none;display:flex;flex-direction:column;color:inherit;border-color:#80d8b5">
-          <span class="card-badge" style="background:#264f48;color:#aff3d6">3차시</span>
-          <strong class="card-title">한 입의 음식, 몸속 여행</strong>
-          <p class="card-desc">입부터 항문까지 음식물의 변화를 따라가며 소화·흡수·배출을 비교해요. 실제 3D 소화기관도 돌려 볼 수 있어요.</p>
-          <span class="card-cta">소화 여행 시작하기</span>
-        </a>
         <button id="cardObserve" class="activity-card" type="button" data-activity="observe">
           <span class="card-badge">1차시</span>
           <strong class="card-title">뼈와 근육 관찰</strong>
@@ -49,6 +43,12 @@
           <p class="card-desc">팔과 다리를 굽혔다 펴며 근육 길이가 어떻게 줄어들고 늘어나는지, 볼록·평평 변화를 재어 봐요.</p>
           <span class="card-cta">움직임 실험하기 →</span>
         </button>
+        <a href="digestion.html" class="activity-card" style="text-decoration:none;display:flex;flex-direction:column;color:inherit;border-color:#80d8b5">
+          <span class="card-badge" style="background:#264f48;color:#aff3d6">3차시</span>
+          <strong class="card-title">한 입의 음식, 몸속 여행</strong>
+          <p class="card-desc">입부터 항문까지 음식물의 변화를 따라가며 소화·흡수·배출을 비교해요. 실제 3D 소화기관도 돌려 볼 수 있어요.</p>
+          <span class="card-cta">소화 여행 시작하기</span>
+        </a>
         <button id="cardCamera" class="activity-card" type="button" data-activity="camera">
           <span class="card-badge badge-cam">카메라</span>
           <strong class="card-title">내 모습에 겹쳐 보기</strong>
@@ -250,9 +250,9 @@
           </div>
         </details>
 
-        <!-- 고급 설정 (교사용) -->
+        <!-- 고급 설정 -->
         <details id="teacherPanel" class="panel fold-panel">
-          <summary>⚙️ 고급 설정 (교사용)</summary>
+          <summary>⚙️ 고급 설정</summary>
           <div class="fold-body">
             <div class="teacher-group">
               <label>관찰 범위 바꾸기</label>
@@ -286,7 +286,7 @@
               <label for="renderQuality">화면 품질</label>
               <select id="renderQuality">
                 <option value="light">가볍게 · 태블릿 권장</option>
-                <option value="sharp">선명하게 · 교사용 PC</option>
+                <option value="sharp">선명하게 · PC</option>
               </select>
               <p class="hint" id="renderCount" role="status"></p>
             </div>
