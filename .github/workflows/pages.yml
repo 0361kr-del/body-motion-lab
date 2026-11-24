@@ -38,6 +38,10 @@ jobs:
           node --check site-source/dist/sw.js
           node --check site-source/dist/digestion.js
           node --check site-source/dist/digestion-3d.js
+          node --check site-source/dist/walk.js
+          node --check site-source/dist/walk-physics.js
+          node --check site-source/dist/walk-render.js
+          node tests/walk.cjs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site-source/dist
