@@ -19,7 +19,7 @@ class WalkIllustration{
  if(isThigh){this.belly(9,1,len*.87,12,1-m.knee,'#c66f5b');this.belly(-9,-1,len*.87,10,m.knee,'#8d759f');this.belly(2,-len*.2,len*.54,5,1-m.knee,'#c66f5b');}
  else{this.belly(-5,-9,len*.68,9,.2,'#bc8b80');this.belly(6,0,len*.82,4,.1,'#c49c86');}
  if(bones){this.line({x:0,y:-h},{x:0,y:h},'#fff1d3',5);this.ellipse(0,-h,5,5,'#fff1d3');this.ellipse(0,h,5,5,'#fff1d3');}
- c.restore();if(far){c.fillStyle='#314b3f15';c.fillRect(-top*2,-h-8,top*4,len+16)}c.restore();}
+ c.restore();c.restore();}
  shoe(l,i){const c=this.ctx;c.save();c.translate(l.foot.position.x,l.foot.position.y);c.rotate(l.foot.angle);
  this.path([['moveTo',-23,5],['lineTo',-23,-7],['quadraticCurveTo',-22,-15,-15,-16],['lineTo',-5,-14],['quadraticCurveTo',4,-5,17,-5],['quadraticCurveTo',26,-5,25,5],['closePath']],i?'#b47b5d':'#47725c','#3f5044',.9);
  this.path([['moveTo',-24,4],['lineTo',25,4],['lineTo',26,8],['lineTo',-24,8],['closePath']],'#f3ecd5','#c3bca7',.6);
