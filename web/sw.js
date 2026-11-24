@@ -1,6 +1,7 @@
-const CACHE_NAME='body-motion-lab-digestion-v1';
+const CACHE_NAME='body-motion-lab-muscle-contrast2';
 
 const CORE_ASSETS=[
+  './muscle-emphasis.js',
   './digestion.html', './digestion.css', './digestion.js', './digestion-data.js', './digestion-3d.js',
   './models/digestive/esophagus.glb',
   './models/digestive/stomach.glb',
