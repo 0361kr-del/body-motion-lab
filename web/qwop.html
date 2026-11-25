@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QWOP 달리기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* 방향: 운동회 날의 트랙. 벽돌색 트랙, 맑은 하늘, 분필 같은 흰 글씨와 남색 전광판. 한 가지 세계관만 쓴다. */
+  :root {
+    color-scheme: light;
+    --ink: #10203f;
+    --ink-2: #1d3260;
+    --chalk: #f6f8fc;
+    --sun: #ffc933;
+    --track: #c4503a;
+    --teal: #12a594;
+    --font-display: "Black Han Sans", "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    --font-body: "IBM Plex Sans KR", "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--ink); color: var(--chalk); font-family: var(--font-body); overflow: hidden; }
+  #app { position: relative; width: 100%; height: 100%; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* ---- 위쪽 기록판 ---- */
+  .hud { position: absolute; top: 0; left: 0; right: 0; padding: 14px 20px 0; display: flex; gap: 20px; align-items: flex-start; pointer-events: none; }
+  .scoreboard { display: flex; flex-direction: column; gap: 4px; }
+  .dist { font-family: var(--font-display); font-size: clamp(48px, 9vw, 92px); line-height: 0.95; color: var(--ink); font-variant-numeric: tabular-nums; text-shadow: 0 2px 0 rgba(255,255,255,.55); }
+  .dist .unit { font-size: 0.42em; margin-left: 6px; }
+  .meta { display: flex; gap: 16px; font-size: 15px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .meta b { font-weight: 600; background: var(--ink); color: var(--chalk); padding: 1px 8px; border-radius: 4px; }
+  .track-bar { flex: 1; min-width: 0; margin-top: 10px; max-width: 420px; margin-left: auto; }
+  .track-bar .rail { position: relative; height: 10px; border-radius: 5px; background: rgba(16,32,63,.25); }
+  .track-bar .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 5px; background: var(--ink); }
+  .track-bar .dot { position: absolute; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--sun); border: 3px solid var(--ink); left: 0; }
+  .track-bar .ends { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* ---- 키 버튼 ---- */
+  .keys { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; gap: 28px; padding: 0 12px; }
+  .pair { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .pair .caps { display: flex; gap: 8px; }
+  .pair .label { font-size: 13px; font-weight: 600; color: var(--chalk); text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+  .cap { width: 64px; height: 64px; border-radius: 10px; border: 0; padding: 0 0 4px; cursor: pointer;
+         font-family: var(--font-display); font-size: 28px; color: var(--chalk); background: var(--ink-2);
+         box-shadow: 0 5px 0 #0a1530, 0 8px 12px rgba(0,0,0,.3); transition: transform .05s, box-shadow .05s, background-color .05s; touch-action: none; }
+  .cap:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+  .cap.on { transform: translateY(4px); box-shadow: 0 1px 0 #0a1530, 0 3px 6px rgba(0,0,0,.3); background: var(--sun); color: var(--ink); }
+
+  /* ---- 카드 ---- */
+  .card { position: absolute; left: 50%; top: 36%; transform: translate(-50%, -50%); width: min(560px, calc(100% - 32px));
+          background: rgba(16,32,63,.94); color: var(--chalk); border-radius: 6px; padding: 22px 24px 20px;
+          box-shadow: 0 0 0 3px rgba(246,248,252,.9) inset, 0 14px 40px rgba(10,21,48,.4); }
+  .card.hidden { display: none; }
+  .card h1, .card h2 { font-family: var(--font-display); font-weight: 400; margin: 0 0 12px; text-wrap: balance; }
+  .card h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1.05; }
+  .card h2 { font-size: clamp(30px, 6vw, 42px); line-height: 1.1; }
+  .card p { margin: 0 0 14px; line-height: 1.55; font-size: 15px; max-width: 62ch; }
+  .guide { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; margin: 0 0 16px; padding: 0; list-style: none; }
+  .guide li { display: flex; gap: 10px; align-items: center; font-size: 14px; line-height: 1.35; }
+  .guide kbd { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 6px; background: var(--chalk); color: var(--ink); font-family: var(--font-display); font-size: 20px; box-shadow: 0 3px 0 #9aa6bd; }
+  .start-note { font-size: 14px; font-weight: 600; color: var(--sun); margin: 0; }
+  .stats { display: flex; gap: 12px; margin: 0 0 16px; flex-wrap: wrap; }
+  .stat { flex: 1 1 110px; border: 2px solid rgba(246,248,252,.35); border-radius: 4px; padding: 8px 12px; }
+  .stat .k { font-size: 12px; font-weight: 600; opacity: .8; }
+  .stat .v { font-family: var(--font-display); font-size: 30px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .btn { font-family: var(--font-body); font-size: 16px; font-weight: 600; padding: 10px 18px; border: 0; border-radius: 6px; background: var(--sun); color: var(--ink); cursor: pointer; box-shadow: 0 4px 0 #b58a0b; }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #b58a0b; }
+  .btn:focus-visible { outline: 3px solid var(--chalk); outline-offset: 3px; }
+  .btn small { font-weight: 400; opacity: .75; margin-left: 6px; }
+  .error { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; background: var(--ink); font-size: 16px; line-height: 1.6; }
+
+  @media (max-width: 560px) {
+    .hud { padding: 10px 14px 0; gap: 12px; }
+    .keys { gap: 14px; bottom: 10px; }
+    .cap { width: 58px; height: 58px; }
+    .guide { grid-template-columns: 1fr; }
+    .card { top: 38%; padding: 18px 18px 16px; }
+  }
+  @media (max-height: 520px) { .card { top: 46%; } .card p { margin-bottom: 8px; } .guide { margin-bottom: 8px; } }
+  @media (prefers-reduced-motion: reduce) { .cap { transition: none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="view" aria-label="달리기 화면"></canvas>
+
+  <div class="hud">
+    <div class="scoreboard">
+      <div class="dist"><span id="distVal">0.0</span><span class="unit">m</span></div>
+      <div class="meta"><span>시간 <b id="timeVal">0.0</b></span><span>최고 <b id="bestVal">-</b></span></div>
+    </div>
+    <div class="track-bar" aria-hidden="true">
+      <div class="rail"><div class="fill" id="progFill"></div><div class="dot" id="progDot"></div></div>
+      <div class="ends"><span>출발</span><span>결승 100 m</span></div>
+    </div>
+  </div>
+
+  <div class="keys" id="keys">
+    <div class="pair">
+      <div class="caps">
+        <button class="cap" data-k="q" id="cap-q" type="button" aria-label="Q 키">Q</button>
+        <button class="cap" data-k="w" id="cap-w" type="button" aria-label="W 키">W</button>
+      </div>
+      <div class="label">허벅지</div>
+    </div>
+    <div class="pair">
+      <div class="caps">
+        <button class="cap" data-k="o" id="cap-o" type="button" aria-label="O 키">O</button>
+        <button class="cap" data-k="p" id="cap-p" type="button" aria-label="P 키">P</button>
+      </div>
+      <div class="label">종아리</div>
+    </div>
+  </div>
+
+  <section class="card" id="intro">
+    <h1>QWOP 달리기</h1>
+    <p>네 개의 키로 두 다리를 따로 움직여 100 m 결승선까지 달려 보세요. 머리나 몸통이 땅에 닿으면 끝납니다.</p>
+    <ul class="guide">
+      <li><kbd>Q</kbd><span>오른 허벅지 앞으로<br>왼 허벅지 뒤로</span></li>
+      <li><kbd>W</kbd><span>왼 허벅지 앞으로<br>오른 허벅지 뒤로</span></li>
+      <li><kbd>O</kbd><span>오른 종아리 펴기<br>왼 종아리 접기</span></li>
+      <li><kbd>P</kbd><span>왼 종아리 펴기<br>오른 종아리 접기</span></li>
+    </ul>
+    <p class="start-note">아무 키나 누르면 출발합니다. 화면 버튼을 눌러도 됩니다. 다시 시작은 R 키.</p>
+  </section>
+
+  <section class="card hidden" id="result" aria-live="polite">
+    <h2 id="resultTitle">쿵! 넘어졌어요</h2>
+    <div class="stats">
+      <div class="stat"><div class="k">이번 기록</div><div class="v" id="rDist">0.0 m</div></div>
+      <div class="stat"><div class="k">달린 시간</div><div class="v" id="rTime">0.0초</div></div>
+      <div class="stat"><div class="k">최고 기록</div><div class="v" id="rBest">-</div></div>
+    </div>
+    <button class="btn" id="again" type="button">다시 달리기<small>R 또는 Space</small></button>
+  </section>
+</div>
+
+<script src="./vendor/planck.min.js"></script>
+<script>
+/* QWOP 스타일 러너 물리 모델 (planck.js / Box2D)
+   좌표계: 미터, y 위쪽이 +, 러너는 +x 방향(오른쪽)으로 달린다.
+   각도: 반시계(CCW)가 +. 허벅지 +각도 = 다리가 앞으로, 무릎 -각도 = 종아리가 뒤로 접힘. */
+function createQwop(planck, tune) {
+  const { Vec2, World, Box, Circle, RevoluteJoint } = planck;
+  const T = Object.assign({
+    density: 170,
+    hipTorque: 400, kneeTorque: 300, ankleTorque: 20,
+    neckTorque: 40, shoulderTorque: 6, elbowTorque: 4,
+    hipSpeed: 4, kneeSpeed: 4.5,
+    footFriction: 0.8, groundFriction: 0.8,
+  }, tune || {});
+
+  const world = new World({ gravity: Vec2(0, -10) });
+  const FG = -1; // 같은 그룹(음수)은 서로 충돌하지 않음: 러너 부위끼리 겹쳐도 통과
+  const state = { over: false, overBy: null, time: 0 };
+
+  // ---- 바닥 ----
+  const ground = world.createBody({ type: 'static' });
+  ground.createFixture(new Box(400, 1, Vec2(100, -1), 0), { friction: T.groundFriction, userData: 'ground' });
+
+  function part(name, x, y, shape, extra) {
+    const b = world.createBody({ type: 'dynamic', position: Vec2(x, y), linearDamping: 0.02, angularDamping: 0.05 });
+    b.createFixture(shape, Object.assign({
+      density: T.density, friction: 0.6, restitution: 0.0,
+      filterGroupIndex: FG, userData: name,
+    }, extra || {}));
+    b.partName = name;
+    return b;
+  }
+  const joints = {};
+  function joint(name, a, b, ax, ay, lo, hi, torque, speed) {
+    const j = new RevoluteJoint({
+      lowerAngle: lo, upperAngle: hi, enableLimit: true,
+      enableMotor: true, maxMotorTorque: torque, motorSpeed: speed || 0,
+    }, a, b, Vec2(ax, ay));
+    world.createJoint(j);
+    joints[name] = j;
+    return j;
+  }
+
+  // ---- 치수 ----
+  const ANKLE_Y = 0.10, CALF = 0.42, THIGH = 0.42, TORSO = 0.58;
+  const KNEE_Y = ANKLE_Y + CALF, HIP_Y = KNEE_Y + THIGH, NECK_Y = HIP_Y + TORSO;
+  const SHOULDER_Y = NECK_Y - 0.08, UARM = 0.28, FARM = 0.28;
+
+  const parts = {};
+  parts.torso = part('torso', 0, HIP_Y + TORSO / 2, new Box(0.11, TORSO / 2));
+  parts.head = part('head', 0.01, NECK_Y + 0.15, new Circle(0.125), { density: T.density * 0.7 });
+
+  function leg(side, dx) {
+    const x = dx;
+    parts['thigh' + side] = part('thigh', x, KNEE_Y + THIGH / 2, new Box(0.065, THIGH / 2));
+    parts['calf' + side] = part('calf', x, ANKLE_Y + CALF / 2, new Box(0.05, CALF / 2));
+    parts['foot' + side] = part('foot', x + 0.07, ANKLE_Y - 0.06, new Box(0.13, 0.04), { friction: T.footFriction });
+    joint('hip' + side, parts.torso, parts['thigh' + side], x, HIP_Y, -1.1, 1.4, T.hipTorque);
+    joint('knee' + side, parts['thigh' + side], parts['calf' + side], x, KNEE_Y, -2.3, 0.0, T.kneeTorque);
+    joint('ankle' + side, parts['calf' + side], parts['foot' + side], x, ANKLE_Y, -0.55, 0.55, T.ankleTorque);
+  }
+  leg('L', -0.04);
+  leg('R', 0.04);
+
+  function arm(side, dx) {
+    parts['uarm' + side] = part('arm', dx, SHOULDER_Y - UARM / 2, new Box(0.04, UARM / 2), { density: T.density * 0.8 });
+    parts['farm' + side] = part('arm', dx, SHOULDER_Y - UARM - FARM / 2, new Box(0.035, FARM / 2), { density: T.density * 0.8 });
+    joint('shoulder' + side, parts.torso, parts['uarm' + side], dx, SHOULDER_Y, -1.6, 1.6, T.shoulderTorque);
+    joint('elbow' + side, parts['uarm' + side], parts['farm' + side], dx, SHOULDER_Y - UARM, 0.0, 2.3, T.elbowTorque);
+  }
+  arm('L', -0.03);
+  arm('R', 0.03);
+
+  joint('neck', parts.torso, parts.head, 0, NECK_Y, -0.5, 0.5, T.neckTorque);
+
+  // ---- 넘어짐 판정: 머리나 몸통이 바닥에 닿으면 끝 ----
+  world.on('begin-contact', (c) => {
+    if (state.over) return;
+    const a = c.getFixtureA().getUserData(), b = c.getFixtureB().getUserData();
+    const other = a === 'ground' ? b : b === 'ground' ? a : null;
+    if (other === 'head' || other === 'torso') { state.over = true; state.overBy = other; }
+  });
+
+  const startX = parts.torso.getPosition().x;
+
+  function step(keys, dt) {
+    const hip = ((keys.q ? 1 : 0) - (keys.w ? 1 : 0)) * T.hipSpeed;
+    const knee = ((keys.o ? 1 : 0) - (keys.p ? 1 : 0)) * T.kneeSpeed;
+    joints.hipR.setMotorSpeed(hip);  joints.hipL.setMotorSpeed(-hip);
+    joints.kneeR.setMotorSpeed(knee); joints.kneeL.setMotorSpeed(-knee);
+    // 키를 놓았을 때는 속도 0 모터가 관절을 붙잡아 준다(버티는 힘).
+    const SUB = 3, h = dt / SUB;
+    for (let i = 0; i < SUB; i++) world.step(h, 10, 6);
+    if (!state.over) state.time += dt;
+  }
+
+  return {
+    world, parts, joints, state, step, tune: T, startX,
+    distance() { return parts.torso.getPosition().x - startX; },
+  };
+}
+
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  if (typeof planck === 'undefined') {
+    var err = document.createElement('div');
+    err.className = 'error';
+    err.textContent = '물리 엔진을 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요.';
+    $('app').appendChild(err);
+    return;
+  }
+
+  var FINISH = 100;       // 결승선(m)
+  var STEP = 1 / 60;
+  var canvas = $('view'), ctx = canvas.getContext('2d');
+  var W = 0, H = 0, DPR = 1, ppm = 80, groundY = 0, camOff = 0;
+
+  // ---------- 기록 저장(없어도 동작) ----------
+  var best = { dist: 0, time: 0 };
+  try {
+    best.dist = parseFloat(localStorage.getItem('qwop-best-dist')) || 0;
+    best.time = parseFloat(localStorage.getItem('qwop-best-time')) || 0;
+  } catch (e) {}
+  function saveBest() {
+    try {
+      localStorage.setItem('qwop-best-dist', String(best.dist));
+      localStorage.setItem('qwop-best-time', String(best.time));
+    } catch (e) {}
+  }
+
+  // ---------- 입력 ----------
+  var codeToKey = { KeyQ: 'q', KeyW: 'w', KeyO: 'o', KeyP: 'p' };
+  var kb = { q: false, w: false, o: false, p: false };
+  var touch = { q: false, w: false, o: false, p: false };
+  var shown = { q: false, w: false, o: false, p: false };
+  function eff() { return { q: kb.q || touch.q, w: kb.w || touch.w, o: kb.o || touch.o, p: kb.p || touch.p }; }
+  function paintKeys() {
+    var e = eff();
+    for (var k in e) if (shown[k] !== e[k]) { shown[k] = e[k]; $('cap-' + k).classList.toggle('on', e[k]); }
+  }
+  window.addEventListener('keydown', function (ev) {
+    var k = codeToKey[ev.code];   // 한글 입력 상태에서도 같은 물리 키로 인식
+    if (k) { kb[k] = true; ev.preventDefault(); return; }
+    if (ev.code === 'KeyR' || ev.code === 'Space' || ev.code === 'Enter') {
+      if (mode === 'over' || mode === 'finished' || mode === 'running') { ev.preventDefault(); if (!ev.repeat) newGame(); }
+      else if (ev.code === 'Space') ev.preventDefault();
+    }
+  });
+  window.addEventListener('keyup', function (ev) { var k = codeToKey[ev.code]; if (k) { kb[k] = false; ev.preventDefault(); } });
+  window.addEventListener('blur', function () { for (var k in kb) { kb[k] = false; touch[k] = false; } });
+  Array.prototype.forEach.call(document.querySelectorAll('.cap'), function (btn) {
+    var k = btn.getAttribute('data-k');
+    btn.addEventListener('pointerdown', function (ev) { touch[k] = true; try { btn.setPointerCapture(ev.pointerId); } catch (e) {} ev.preventDefault(); });
+    var up = function () { touch[k] = false; };
+    btn.addEventListener('pointerup', up);
+    btn.addEventListener('pointercancel', up);
+    btn.addEventListener('lostpointercapture', up);
+    btn.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
+    btn.addEventListener('keydown', function (ev) { if (ev.code === 'Space' || ev.code === 'Enter') ev.preventDefault(); });
+  });
+  $('again').addEventListener('click', function () { newGame(); });
+
+  // ---------- 게임 상태 ----------
+  var sim, mode, runTime, maxDist, camX;
+  function fmtTime(t) { return t.toFixed(1) + '초'; }
+  function newGame() {
+    sim = createQwop(planck);
+    mode = 'ready'; runTime = 0; maxDist = 0; camX = 0.6;
+    $('intro').classList.remove('hidden');
+    $('result').classList.add('hidden');
+  }
+  function endGame(kind) {
+    mode = kind === 'finish' ? 'finished' : 'over';
+    var finished = kind === 'finish';
+    var dist = finished ? FINISH : maxDist;
+    var newBest = false;
+    if (finished) {
+      if (!best.time || runTime < best.time) { best.time = runTime; newBest = true; }
+      best.dist = FINISH;
+    } else if (dist > best.dist) { best.dist = dist; newBest = true; }
+    if (newBest) saveBest();
+    $('resultTitle').textContent = finished ? '결승선 통과!' : (newBest && dist > 0.5 ? '쿵! 최고 기록이에요' : '쿵! 넘어졌어요');
+    $('rDist').textContent = dist.toFixed(1) + ' m';
+    $('rTime').textContent = fmtTime(runTime);
+    $('rBest').textContent = bestText();
+    $('result').classList.remove('hidden');
+  }
+  function bestText() {
+    if (best.time) return best.time.toFixed(1) + '초 완주';
+    return best.dist > 0 ? best.dist.toFixed(1) + ' m' : '-';
+  }
+
+  function tick(dt) {
+    var keys = (mode === 'ready' || mode === 'running') ? eff() : {};
+    if (mode === 'ready' && (keys.q || keys.w || keys.o || keys.p)) {
+      mode = 'running';
+      $('intro').classList.add('hidden');
+    }
+    sim.step(keys, dt);
+    var d = sim.distance();
+    if (mode === 'running') {
+      runTime += dt;
+      if (d > maxDist) maxDist = d;
+      if (sim.state.over) endGame('fall');
+      else if (d >= FINISH) endGame('finish');
+    }
+    var target = sim.parts.torso.getPosition().x + 1.3;
+    camX += (target - camX) * Math.min(1, dt * 5);
+  }
+
+  // ---------- 그리기 ----------
+  var COL = {
+    skin: '#f2b48c', skinS: '#d79a74', shirt: '#12a594', shirtS: '#0c8173',
+    shorts: '#1c2b5e', shortsS: '#131e45', shoe: '#ff7a2f', shoeS: '#d9601d',
+    sock: '#ffffff', sockS: '#d3d9e4', ink: '#0f1b3a', band: '#ffc933', hair: '#2b1d17'
+  };
+  function hash(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+  function wx(x) { return (x - camX) * ppm + camOff; }
+  function wy(y) { return groundY - y * ppm; }
+
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+    else ctx.rect(x, y, w, h);
+  }
+  function inBody(b, fn) {
+    var p = b.getPosition();
+    ctx.save();
+    ctx.translate(wx(p.x), wy(p.y));
+    ctx.scale(ppm, -ppm);          // 이제 미터 단위, y 위쪽이 +
+    ctx.rotate(b.getAngle());
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 0.016;
+    ctx.strokeStyle = COL.ink;
+    fn();
+    ctx.restore();
+  }
+  function fillStroke(color) { ctx.fillStyle = color; ctx.fill(); ctx.stroke(); }
+
+  function drawThigh(b, far) {
+    inBody(b, function () {
+      rr(-0.075, -0.225, 0.15, 0.45, 0.07); fillStroke(far ? COL.skinS : COL.skin);
+      rr(-0.088, -0.07, 0.176, 0.3, 0.07); fillStroke(far ? COL.shortsS : COL.shorts);
+    });
+  }
+  function drawCalf(b, far) {
+    inBody(b, function () {
+      rr(-0.058, -0.225, 0.116, 0.45, 0.05); fillStroke(far ? COL.skinS : COL.skin);
+      rr(-0.062, -0.225, 0.124, 0.15, 0.04); fillStroke(far ? COL.sockS : COL.sock);
+    });
+  }
+  function drawFoot(b, far) {
+    inBody(b, function () {
+      rr(-0.14, -0.05, 0.3, 0.1, 0.045); fillStroke(far ? COL.shoeS : COL.shoe);
+      ctx.beginPath(); ctx.rect(-0.13, -0.05, 0.28, 0.022); ctx.fillStyle = COL.ink; ctx.fill();
+    });
+  }
+  function drawUArm(b, far) {
+    inBody(b, function () {
+      rr(-0.048, -0.15, 0.096, 0.3, 0.045); fillStroke(far ? COL.skinS : COL.skin);
+      rr(-0.056, -0.02, 0.112, 0.17, 0.045); fillStroke(far ? COL.shirtS : COL.shirt);
+    });
+  }
+  function drawFArm(b, far) {
+    inBody(b, function () {
+      rr(-0.042, -0.15, 0.084, 0.3, 0.04); fillStroke(far ? COL.skinS : COL.skin);
+    });
+  }
+  function drawTorso(b) {
+    inBody(b, function () {
+      rr(-0.125, -0.3, 0.25, 0.6, 0.075); fillStroke(COL.shirt);
+      // 허리 반바지 띠
+      ctx.save(); rr(-0.125, -0.3, 0.25, 0.6, 0.075); ctx.clip();
+      ctx.fillStyle = COL.shorts; ctx.fillRect(-0.14, -0.31, 0.28, 0.14);
+      ctx.fillStyle = COL.chalk || '#f6f8fc'; ctx.fillRect(-0.14, 0.12, 0.28, 0.035);
+      ctx.restore();
+      rr(-0.125, -0.3, 0.25, 0.6, 0.075); ctx.stroke();
+    });
+  }
+  function drawHead(b, fell) {
+    inBody(b, function () {
+      // 목
+      rr(-0.04, -0.17, 0.08, 0.1, 0.02); fillStroke(COL.skinS);
+      // 머리
+      ctx.beginPath(); ctx.arc(0, 0, 0.13, 0, Math.PI * 2); fillStroke(COL.skin);
+      // 코
+      ctx.beginPath(); ctx.arc(0.125, -0.012, 0.02, 0, Math.PI * 2); fillStroke(COL.skin);
+      // 머리카락(뒤쪽 위)
+      ctx.save();
+      ctx.beginPath(); ctx.arc(0, 0, 0.13, 0, Math.PI * 2); ctx.clip();
+      ctx.beginPath(); ctx.moveTo(0.06, 0.14); ctx.lineTo(0.02, 0.0); ctx.lineTo(-0.06, -0.05); ctx.lineTo(-0.14, -0.04); ctx.lineTo(-0.14, 0.14); ctx.closePath();
+      ctx.fillStyle = COL.hair; ctx.fill();
+      // 머리띠
+      ctx.fillStyle = COL.band; ctx.fillRect(-0.14, 0.03, 0.28, 0.04);
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(0, 0, 0.13, 0, Math.PI * 2); ctx.stroke();
+      // 귀
+      ctx.beginPath(); ctx.arc(-0.01, -0.015, 0.025, 0, Math.PI * 2); fillStroke(COL.skinS);
+      // 눈, 입
+      ctx.lineCap = 'round';
+      if (fell) {
+        ctx.lineWidth = 0.014;
+        ctx.beginPath(); ctx.moveTo(0.045, 0.0); ctx.lineTo(0.08, -0.03); ctx.moveTo(0.08, 0.0); ctx.lineTo(0.045, -0.03); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0.075, -0.075, 0.018, 0, Math.PI * 2); ctx.fillStyle = COL.ink; ctx.fill();
+      } else {
+        ctx.beginPath(); ctx.arc(0.065, -0.012, 0.016, 0, Math.PI * 2); ctx.fillStyle = COL.ink; ctx.fill();
+        ctx.lineWidth = 0.014;
+        ctx.beginPath(); ctx.arc(0.07, -0.05, 0.03, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+      }
+    });
+  }
+
+  function drawRunner() {
+    var P = sim.parts, fell = sim.state.over;
+    // 그림자
+    var tx = P.torso.getPosition().x;
+    ctx.fillStyle = 'rgba(40,10,5,.22)';
+    ctx.beginPath(); ctx.ellipse(wx(tx + 0.05), groundY + 0.05 * ppm, 0.55 * ppm, 0.06 * ppm, 0, 0, Math.PI * 2); ctx.fill();
+    // 뒤쪽(왼쪽) 팔다리
+    drawFArm(P.farmL, true); drawUArm(P.uarmL, true);
+    drawThigh(P.thighL, true); drawCalf(P.calfL, true); drawFoot(P.footL, true);
+    drawTorso(P.torso);
+    drawHead(P.head, fell);
+    // 앞쪽(오른쪽) 팔다리
+    drawThigh(P.thighR, false); drawCalf(P.calfR, false); drawFoot(P.footR, false);
+    drawFArm(P.farmR, false); drawUArm(P.uarmR, false);
+  }
+
+  // ---- 배경 ----
+  var skyGrad = null;
+  function ridge(par, base, amp, color, seed, freq) {
+    ctx.beginPath(); ctx.moveTo(0, H);
+    var scroll = camX * ppm * par;
+    for (var sx = 0; sx <= W + 10; sx += 10) {
+      var u = sx + scroll;
+      var y = base - amp * (0.55 + 0.3 * Math.sin(u * freq + seed) + 0.15 * Math.sin(u * freq * 2.7 + seed * 2.1));
+      ctx.lineTo(sx, y);
+    }
+    ctx.lineTo(W + 10, H); ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+  }
+  function drawTrees(par, size, c1, c2) {
+    var spacing = size * 2.6, scroll = camX * ppm * par;
+    var i0 = Math.floor(scroll / spacing) - 1, i1 = Math.ceil((scroll + W) / spacing) + 1;
+    for (var i = i0; i <= i1; i++) {
+      var h = hash(i + size), x = i * spacing - scroll + h * spacing * 0.5, s = size * (0.8 + hash(i * 3.1) * 0.5);
+      ctx.fillStyle = '#5b3e2b'; ctx.fillRect(x - s * 0.06, groundY - s * 0.55, s * 0.12, s * 0.55);
+      ctx.fillStyle = hash(i * 7.7) > 0.5 ? c1 : c2;
+      ctx.beginPath(); ctx.arc(x, groundY - s * 0.85, s * 0.42, 0, Math.PI * 2); ctx.arc(x - s * 0.28, groundY - s * 0.62, s * 0.3, 0, Math.PI * 2); ctx.arc(x + s * 0.28, groundY - s * 0.62, s * 0.3, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  function drawStands() {
+    var par = 0.82, scroll = camX * ppm * par, seg = 11 * ppm, gap = 5 * ppm, period = seg + gap;
+    var i0 = Math.floor(scroll / period) - 1, i1 = Math.ceil((scroll + W) / period) + 1;
+    var sh = 1.5 * ppm;
+    var dotColors = ['#ff7a2f', '#ffc933', '#f6f8fc', '#12a594', '#e0527a', '#6aa9ff'];
+    for (var i = i0; i <= i1; i++) {
+      var x = i * period - scroll;
+      ctx.fillStyle = '#2a3b63'; ctx.fillRect(x, groundY - sh, seg, sh);
+      ctx.fillStyle = '#41578a'; ctx.fillRect(x, groundY - sh, seg, 0.1 * ppm);
+      for (var r = 0; r < 3; r++) {
+        for (var c = 0; c < Math.floor(seg / (0.42 * ppm)); c++) {
+          var hv = hash(i * 100 + r * 17 + c);
+          ctx.fillStyle = dotColors[Math.floor(hv * dotColors.length)];
+          var cx = x + (c + 0.5 + (r % 2) * 0.35) * 0.42 * ppm;
+          ctx.beginPath(); ctx.arc(cx, groundY - sh + (0.4 + r * 0.38) * ppm, 0.11 * ppm, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+    }
+  }
+  var BOARD_TEXT = ['달려라!', '힘내!', '파이팅', '6학년', '한 걸음 더'];
+  var BOARD_COL = [['#ffc933', '#10203f'], ['#12a594', '#f6f8fc'], ['#f6f8fc', '#10203f'], ['#e0527a', '#f6f8fc']];
+  function drawBoards() {
+    var bw = 4, i0 = Math.floor((camX - camOff / ppm) / bw) - 1, i1 = Math.ceil((camX + (W - camOff) / ppm) / bw) + 1;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (var i = i0; i <= i1; i++) {
+      var x = wx(i * bw), w = (bw - 0.08) * ppm, h = 0.55 * ppm;
+      var pal = BOARD_COL[((i % 4) + 4) % 4];
+      ctx.fillStyle = pal[0]; ctx.fillRect(x, groundY - h, w, h);
+      ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x, groundY - 0.07 * ppm, w, 0.07 * ppm);
+      ctx.fillStyle = pal[1]; ctx.font = (0.3 * ppm) + 'px var(--font-display), "Black Han Sans", sans-serif';
+      ctx.fillText(BOARD_TEXT[((i % 5) + 5) % 5], x + w / 2, groundY - h / 2 - 0.02 * ppm);
+    }
+  }
+  function drawTrack() {
+    var th = H - groundY;
+    var g = ctx.createLinearGradient(0, groundY, 0, H);
+    g.addColorStop(0, '#d2614a'); g.addColorStop(1, '#a93f2c');
+    ctx.fillStyle = g; ctx.fillRect(0, groundY, W, th);
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(0, groundY, W, 3);
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    ctx.fillRect(0, groundY + th * 0.4, W, 3);
+    ctx.fillRect(0, groundY + th * 0.78, W, 3);
+
+    var xmin = camX - camOff / ppm - 1, xmax = camX + (W - camOff) / ppm + 1;
+    ctx.fillStyle = 'rgba(255,255,255,.8)';
+    for (var m = Math.max(0, Math.floor(xmin)); m <= xmax && m <= FINISH + 5; m++) {
+      var x = wx(m);
+      if (m % 10 === 0) ctx.fillRect(x - 2, groundY + 4, 4, th * 0.22);
+      else ctx.fillRect(x - 1, groundY + 4, 2, 9);
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = Math.round(th * 0.26) + 'px "Black Han Sans", "Noto Sans KR", sans-serif';
+    for (var d = Math.max(10, Math.floor(xmin / 10) * 10); d <= xmax && d <= FINISH; d += 10) {
+      if (d < 10) continue;
+      ctx.fillStyle = 'rgba(255,255,255,.92)';
+      ctx.fillText(String(d), wx(d), groundY + th * 0.59);
+    }
+    // 출발선
+    ctx.fillStyle = '#f6f8fc'; ctx.fillRect(wx(0) - 0.05 * ppm, groundY, 0.1 * ppm, th);
+    // 결승선(체크무늬)
+    var fx = wx(FINISH), cw = 0.25 * ppm, rows = 8, rh = th / rows;
+    for (var rI = 0; rI < rows; rI++) for (var cI = 0; cI < 2; cI++) {
+      ctx.fillStyle = (rI + cI) % 2 ? '#10203f' : '#f6f8fc';
+      ctx.fillRect(fx + cI * cw, groundY + rI * rh, cw, rh + 1);
+    }
+  }
+  function drawFinishGate() {
+    var fx = wx(FINISH), top = groundY - 3.4 * ppm;
+    ctx.fillStyle = '#f6f8fc'; ctx.fillRect(fx - 0.05 * ppm, top, 0.1 * ppm, 3.4 * ppm);
+    // 깃발
+    var fw = 2.6 * ppm, fh = 0.9 * ppm, sq = fh / 3;
+    for (var r = 0; r < 3; r++) for (var c = 0; c < Math.ceil(fw / sq); c++) {
+      ctx.fillStyle = (r + c) % 2 ? '#10203f' : '#f6f8fc';
+      ctx.fillRect(fx + 0.05 * ppm + c * sq, top + r * sq, Math.min(sq, fw - c * sq), sq);
+    }
+    ctx.strokeStyle = '#10203f'; ctx.lineWidth = 2; ctx.strokeRect(fx + 0.05 * ppm, top, fw, fh);
+    ctx.fillStyle = '#10203f'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = Math.round(0.42 * ppm) + 'px "Black Han Sans", sans-serif';
+    ctx.fillText('결승 100 m', fx + 0.2 * ppm, top - 0.18 * ppm);
+  }
+  function drawSky() {
+    if (!skyGrad) {
+      skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+      skyGrad.addColorStop(0, '#6fbfe6'); skyGrad.addColorStop(1, '#dcf2f6');
+    }
+    ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, W, groundY + 2);
+    // 해
+    var sx = W * 0.82, sy = H * 0.2, sr = Math.min(W, H) * 0.07;
+    var rg = ctx.createRadialGradient(sx, sy, sr * 0.6, sx, sy, sr * 2.4);
+    rg.addColorStop(0, 'rgba(255,243,176,.9)'); rg.addColorStop(1, 'rgba(255,243,176,0)');
+    ctx.fillStyle = rg; ctx.fillRect(sx - sr * 2.5, sy - sr * 2.5, sr * 5, sr * 5);
+    ctx.fillStyle = '#fff6c4'; ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+    // 구름
+    var cs = camX * ppm * 0.03;
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    for (var i = 0; i < 6; i++) {
+      var cx = ((i * 330 + hash(i) * 120 - cs) % (W + 400) + (W + 400)) % (W + 400) - 200;
+      var cy = H * (0.1 + hash(i + 9) * 0.25), cw = 60 + hash(i + 3) * 60;
+      ctx.beginPath(); ctx.ellipse(cx, cy, cw, cw * 0.22, 0, 0, Math.PI * 2); ctx.ellipse(cx + cw * 0.3, cy - cw * 0.12, cw * 0.5, cw * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function render() {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    drawSky();
+    ridge(0.05, groundY - H * 0.12, H * 0.2, '#8fb5cc', 1.3, 0.0042);
+    ridge(0.12, groundY - H * 0.03, H * 0.14, '#6e9f9a', 4.1, 0.0065);
+    drawTrees(0.4, H * 0.16, '#3f8a5f', '#58a56f');
+    drawStands();
+    drawBoards();
+    drawTrack();
+    drawFinishGate();
+    drawRunner();
+
+    // 기록판
+    var d = sim.distance(); if (Math.abs(d) < 0.05) d = 0;
+    $('distVal').textContent = d.toFixed(1);
+    $('timeVal').textContent = fmtTime(runTime);
+    $('bestVal').textContent = bestText();
+    var f = Math.max(0, Math.min(1, d / FINISH));
+    $('progFill').style.width = (f * 100) + '%';
+    $('progDot').style.left = (f * 100) + '%';
+    paintKeys();
+  }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    W = r.width; H = r.height;
+    canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+    ppm = Math.min(H * 0.23, W / 5.2);
+    groundY = H * 0.78;
+    camOff = W * 0.36;
+    skyGrad = null;
+  }
+  window.addEventListener('resize', resize);
+
+  var last = 0, accum = 0;
+  function frame(ts) {
+    var dt = Math.min(0.1, (ts - last) / 1000 || 0); last = ts;
+    accum += dt;
+    var n = 0;
+    while (accum >= STEP && n < 6) { tick(STEP); accum -= STEP; n++; }
+    if (n === 6) accum = 0;
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  newGame();
+  requestAnimationFrame(function (ts) { last = ts; frame(ts); });
+})();
+</script>
+</body>
+</html>

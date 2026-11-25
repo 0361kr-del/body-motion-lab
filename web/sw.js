@@ -1,6 +1,7 @@
-const CACHE_NAME='body-motion-lab-muscle-contrast2';
+const CACHE_NAME='body-motion-lab-qwop-bonus1';
 
 const CORE_ASSETS=[
+  './qwop.html', './vendor/planck.min.js',
   './muscle-emphasis.js',
   './digestion.html', './digestion.css', './digestion.js', './digestion-data.js', './digestion-3d.js',
   './models/digestive/esophagus.glb',
